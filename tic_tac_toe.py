@@ -6,7 +6,7 @@ class Board:
         self.player2 = player2
 
     def printBoard(self):
-        #print("\033[2J\033[H")
+        print("\033[2J\033[H")
         print("-------------")
         for i in range(3):
             print(f"| {self.squares[i][0]} | {self.squares[i][1]} | {self.squares[i][2]} |")
@@ -27,6 +27,9 @@ class Board:
                 return 0
         else:
             self.player2.calculateMove()
+
+        if not self.movesLeft():
+            gameState = 3
 
     def playerMove(self, player):
         playerCoordinates = player.playerMove()
@@ -149,7 +152,8 @@ class Computer:
                         bestValue = moveValue
                         bestRow = i
                         bestCol = j
-        board.squares[bestRow][bestCol] = "O"
+        if bestRow != -1:
+            board.squares[bestRow][bestCol] = "O"
 
 gameState = 0
 print("Welcome to Tic-Tac-Toe! To make a move, type the x-coordinate and the y-coordinate separated by a space.")
@@ -166,4 +170,7 @@ while True:
         break
     if gameState == 2:
         print("O wins!")
+        break
+    if gameState == 3:
+        print("Tie!")
         break
