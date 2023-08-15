@@ -6,7 +6,7 @@ class Board:
         self.player2 = player2
 
     def printBoard(self):
-        print("\033[2J\033[H")
+        #print("\033[2J\033[H")
         print("-------------")
         for i in range(3):
             print(f"| {self.squares[i][0]} | {self.squares[i][1]} | {self.squares[i][2]} |")
@@ -26,8 +26,7 @@ class Board:
                 gameState = 2
                 return 0
         else:
-            pass
-            #computer move
+            self.player2.calculateMove()
 
     def playerMove(self, player):
         playerCoordinates = player.playerMove()
@@ -57,6 +56,14 @@ class Board:
             return True
         return False
 
+    def movesLeft(self):
+        for row in self.squares:
+            for square in row:
+                if square == " ":
+                    return True
+        return False
+
+
 class Player:
     
     def __init__(self, symbol):
@@ -67,7 +74,82 @@ class Player:
         return coordinates
 
 class Computer:
-    pass
+    
+    opponent = None
+
+    def __init__(self, symbol):
+        self.symbol = symbol
+        if symbol == "X":
+            self.opponent = "O"
+        else:
+            self.opponent = "X"
+    
+    def evaluatePosition(self, board):
+        for i in range(3):
+            if board.checkRow(i, "X"):
+                return -10
+            if board.checkRow(i, "O"):
+                return 10
+
+            if board.checkColumn(i, "X"):
+                return -10
+            if board.checkColumn(i, "O"):
+                return 10
+        
+        if board.checkDiagonals("X"):
+            return -10
+        if board.checkDiagonals("O"):
+            return 10
+        
+        return 0
+
+    def minimax(self, board, depth, isMaximizing):
+        score = self.evaluatePosition(board)
+        if score == 10:
+            return 10
+
+        if score == -10:
+            return -10
+
+        if not board.movesLeft():
+            return 0
+
+        if isMaximizing:
+            best = -20
+            for i in range(3):
+                for j in range(3):
+                    if board.squares[i][j] == " ":
+                        board.squares[i][j] = self.symbol
+                        best = max(best, self.minimax(board, depth+1, not isMaximizing))
+                        board.squares[i][j] = " "
+            return best
+        else:
+            best = 20
+            for i in range(3):
+                for j in range(3):
+                    if board.squares[i][j] == " ":
+                        board.squares[i][j] = self.opponent
+                        best = min(best, self.minimax(board, depth+1, not isMaximizing))
+                        board.squares[i][j] = " "
+            return best
+    
+    def calculateMove(self):
+        global board
+        bestRow = -1
+        bestCol = -1
+        bestValue = -20
+
+        for i in range(3):
+            for j in range(3):
+                if board.squares[i][j] == " ":
+                    board.squares[i][j] = self.symbol
+                    moveValue = self.minimax(board, 0, False)
+                    board.squares[i][j] = " "
+                    if moveValue > bestValue:
+                        bestValue = moveValue
+                        bestRow = i
+                        bestCol = j
+        board.squares[bestRow][bestCol] = "O"
 
 gameState = 0
 print("Welcome to Tic-Tac-Toe! To make a move, type the x-coordinate and the y-coordinate separated by a space.")
@@ -75,7 +157,7 @@ secondPlayer = input("Play vs Player or Computer? (p for player, c for computer)
 if secondPlayer == "p":
     board = Board(Player("X"), Player("O"))
 else:
-    pass
+    board = Board(Player("X"), Computer("O"))
 
 while True:
     board.move()
