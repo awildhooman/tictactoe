@@ -12,22 +12,35 @@ class Board:
             print(f"| {self.squares[i][0]} | {self.squares[i][1]} | {self.squares[i][2]} |")
             print("-------------")
 
-    def move(self):
+    def gameLoop(self):
         global gameState
         self.printBoard()
-        if self.playerMove(self.player1):
-            self.printBoard()
-            gameState = 1
-            return 0
+
+        #checks if player1/player2 is a player or computer object, then does the action accordingly
+        if isinstance(self.player1, Player):
+            if self.playerMove(self.player1):
+                self.printBoard()
+                gameState = 1
+                return 0
+        else:
+            if self.player1.calculateMove():
+                self.printBoard()
+                gameState = 1
+                return 0
+
         self.printBoard()
+
         if isinstance(self.player2, Player):
             if self.playerMove(self.player2):
                 self.printBoard()
                 gameState = 2
                 return 0
         else:
-            self.player2.calculateMove()
-
+            if self.player2.calculateMove():
+                self.printBoard()
+                gameState = 2
+                return 0
+        #tie
         if not self.movesLeft():
             gameState = 3
 
@@ -87,25 +100,27 @@ class Computer:
         else:
             self.opponent = "X"
     
-    def evaluatePosition(self, board):
+    #evaluates the position, with +10 = computer win, 0 = tie, -10 = computer loss
+    def evaluatePosition(self, board): 
         for i in range(3):
             if board.checkRow(i, "X"):
-                return -10
+                return 10 * computerFirst
             if board.checkRow(i, "O"):
-                return 10
+                return -10 * computerFirst
 
             if board.checkColumn(i, "X"):
-                return -10
+                return 10 * computerFirst
             if board.checkColumn(i, "O"):
-                return 10
+                return -10 * computerFirst
         
         if board.checkDiagonals("X"):
-            return -10
+            return 10 * computerFirst
         if board.checkDiagonals("O"):
-            return 10
+            return -10 * computerFirst
         
         return 0
 
+    #this function assigns each possible move a value
     def minimax(self, board, depth, isMaximizing):
         score = self.evaluatePosition(board)
         if score == 10:
@@ -136,6 +151,7 @@ class Computer:
                         board.squares[i][j] = " "
             return best
     
+    #calls minimax on empty squares, returns square with the best value
     def calculateMove(self):
         global board
         bestRow = -1
@@ -153,18 +169,29 @@ class Computer:
                         bestRow = i
                         bestCol = j
         if bestRow != -1:
-            board.squares[bestRow][bestCol] = "O"
+            board.squares[bestRow][bestCol] = self.symbol
+
+        if board.checkRow(bestRow, self.symbol) or board.checkColumn(bestCol, self.symbol) or board.checkDiagonals(self.symbol):
+            return True
 
 gameState = 0
+print("\033[2J\033[H")
 print("Welcome to Tic-Tac-Toe! To make a move, type the x-coordinate and the y-coordinate separated by a space.")
 secondPlayer = input("Play vs Player or Computer? (p for player, c for computer): ")
+computerFirst = -1
+
 if secondPlayer == "p":
     board = Board(Player("X"), Player("O"))
 else:
-    board = Board(Player("X"), Computer("O"))
+    order = input("Computer goes first or second? (type 1 or 2) ")
+    if order == "1":
+        computerFirst = 1
+        board = Board(Computer("X"), Player("O"))
+    else:
+        board = Board(Player("X"), Computer("O"))
 
 while True:
-    board.move()
+    board.gameLoop()
     if gameState == 1:
         print("X wins!")
         break
